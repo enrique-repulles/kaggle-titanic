@@ -1,0 +1,207 @@
+---
+title: "Exploratory 1"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+
+---
+
+# Load de data
+
+```{r}
+train<- read.csv("../data/train.csv")
+
+str(train)
+```
+
+Change type for cathegorical vars
+
+
+```{r}
+train$Survived<-factor(train$Survived)
+train$Pclass<-factor(train$Pclass)
+str(train)
+
+```
+
+```{r}
+summary(train)
+```
+
+Plots
+```{r}
+plot(train$Survived)
+```
+
+```{r}
+hist(train$Age)
+```
+
+```{r}
+hist(train$SibSp)
+```
+
+```{r}
+hist(train$Parch)
+```
+
+```{r}
+hist(train$Fare)
+```
+
+```{r}
+plot(train$Embarked)
+```
+
+# Bidimiensional distributions
+Survival vs others
+
+```{r}
+with(train,plot(Pclass,Survived))
+```
+
+
+```{r}
+with(train,plot(Sex,Survived))
+```
+
+```{r}
+with(train,boxplot(Age,Survived))
+```
+
+```{r}
+with(train,boxplot(SibSp,Survived))
+```
+
+```{r}
+with(train,boxplot(Parch,Survived))
+```
+
+```{r}
+with(train,boxplot(Fare,Survived))
+```
+
+
+```{r}
+with(train,boxplot(log(Fare+.01),Survived))
+```
+```{r}
+with(train,plot(Embarked,Survived))
+```
+
+# Check for data anomalies
+
+No age?
+```{r}
+
+summary (train[is.na(train$Age),])
+```
+
+(no cabin for these people)
+
+impostate the mean for these values 
+```{r}
+train[is.na(train$Age),]$Age<-mean(train$Age, na.rm = TRUE)
+```
+
+```{r}
+summary(train$Age)
+
+```
+
+
+
+Null in "embarked"?
+
+```{r}
+train[train$Embarked=="",]
+```
+
+action -> remove these values
+
+```{r}
+train<-train[train$Embarked!="",]
+```
+
+
+possible outlier in Fare
+
+```{r}
+boxplot(train[train$Fare<500,]$Fare)
+
+
+``` 
+
+Eliminamos ese punto aunque la distrubicion sigue siendo muy sesgada
+
+```{r}
+train<-train[train$Fare<500,]
+
+```
+
+
+```{r}
+summary(train)
+```
+
+
+
+# Prepared data: 
+
+We discard artifial features and normalize the numerical features
+
+
+```{r}
+normalizationData <- list(
+  ageMean=mean(train$Age),
+  ageSD=sd(train$Age),
+  SibSpMean=mean(train$SibSp),
+  SibSpSD=sd(train$SibSp),
+  ParchMean=mean(train$Parch),
+  ParchSD=sd(train$Parch),
+  FareMean=mean(train$Fare),
+  FareSD=sd(train$Fare)
+)
+
+normalizationData
+```
+
+
+```{r}
+training<-data.frame(
+Pclass=train$Pclass,
+Sex =train$Sex,
+AgeNorm=(train$Age-normalizationData$ageMean)/normalizationData$ageSD,
+SibSpNorm=(train$SibSp -normalizationData$SibSpMean)/normalizationData$SibSpSD,
+ParchNorm=(train$Parch -normalizationData$ParchMean)/normalizationData$ParchSD,
+FareNorm=(train$Fare -normalizationData$FareMean)/normalizationData$FareSD,
+Embarked=train$Embarked,
+Survived=train$Survived
+  )
+```
+
+Check data cleaned
+
+```{r}
+summary(training)
+```
+
+
+
+save the clean data
+
+```{r}
+save(file = "../data/cleantraining.dat", training)
+```
+
+
+
