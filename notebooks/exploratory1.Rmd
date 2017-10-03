@@ -1,5 +1,5 @@
 ---
-title: "Exploratory 1"
+title: "Data preparation and Exploratory 1"
 output:
   pdf_document: default
   html_notebook: default
@@ -18,84 +18,97 @@ When you save the notebook, an HTML file containing the code and output will be 
 # Load de data
 
 ```{r}
-train<- read.csv("../data/train.csv")
+alldata<- read.csv("../data/train.csv")
+alldata$dataset<-runif(nrow(alldata))
 
-str(train)
+
+training <- alldata[alldata$dataset<=.6,]
+validation <- alldata[alldata$dataset>.6 & alldata$dataset<=.8,]
+testing <- alldata[alldata$dataset>.8,]
+
+
+training$dataset <-NULL;
+validation$dataset <-NULL;
+testing$dataset  <-NULL;
+alldata<-NULL;
+
+
+str(training)
 ```
 
-Change type for cathegorical vars
+#Change type for cathegorical vars
 
 
 ```{r}
-train$Survived<-factor(train$Survived)
-train$Pclass<-factor(train$Pclass)
-str(train)
+training$Survived<-factor(training$Survived)
+training$Pclass<-factor(training$Pclass)
+str(training)
 
 ```
 
 ```{r}
-summary(train)
+summary(training)
 ```
 
 Plots
 ```{r}
-plot(train$Survived)
+plot(training$Survived)
 ```
 
 ```{r}
-hist(train$Age)
+hist(training$Age)
 ```
 
 ```{r}
-hist(train$SibSp)
+hist(training$SibSp)
 ```
 
 ```{r}
-hist(train$Parch)
+hist(training$Parch)
 ```
 
 ```{r}
-hist(train$Fare)
+hist(training$Fare)
 ```
 
 ```{r}
-plot(train$Embarked)
+plot(training$Embarked)
 ```
 
 # Bidimiensional distributions
 Survival vs others
 
 ```{r}
-with(train,plot(Pclass,Survived))
+with(training,plot(Pclass,Survived))
 ```
 
 
 ```{r}
-with(train,plot(Sex,Survived))
+with(training,plot(Sex,Survived))
 ```
 
 ```{r}
-with(train,boxplot(Age,Survived))
+with(training,boxplot(Age,Survived))
 ```
 
 ```{r}
-with(train,boxplot(SibSp,Survived))
+with(training,boxplot(SibSp,Survived))
 ```
 
 ```{r}
-with(train,boxplot(Parch,Survived))
+with(training,boxplot(Parch,Survived))
 ```
 
 ```{r}
-with(train,boxplot(Fare,Survived))
+with(training,boxplot(Fare,Survived))
 ```
 
 
 ```{r}
-with(train,boxplot(log(Fare+.01),Survived))
+with(training,boxplot(log(Fare+.01),Survived))
 ```
 ```{r}
-with(train,plot(Embarked,Survived))
+with(training,plot(Embarked,Survived))
 ```
 
 # Check for data anomalies
@@ -103,18 +116,18 @@ with(train,plot(Embarked,Survived))
 No age?
 ```{r}
 
-summary (train[is.na(train$Age),])
+summary (training[is.na(training$Age),])
 ```
 
 (no cabin for these people)
 
 impostate the mean for these values 
 ```{r}
-train[is.na(train$Age),]$Age<-mean(train$Age, na.rm = TRUE)
+training[is.na(training$Age),]$Age<-mean(training$Age, na.rm = TRUE)
 ```
 
 ```{r}
-summary(train$Age)
+summary(training$Age)
 
 ```
 
@@ -123,20 +136,20 @@ summary(train$Age)
 Null in "embarked"?
 
 ```{r}
-train[train$Embarked=="",]
+training[training$Embarked=="",]
 ```
 
 action -> remove these values
 
 ```{r}
-train<-train[train$Embarked!="",]
+train<-training[training$Embarked!="",]
 ```
 
 
 possible outlier in Fare
 
 ```{r}
-boxplot(train[train$Fare<500,]$Fare)
+boxplot(training[training$Fare<500,]$Fare)
 
 
 ``` 
@@ -144,7 +157,7 @@ boxplot(train[train$Fare<500,]$Fare)
 Eliminamos ese punto aunque la distrubicion sigue siendo muy sesgada
 
 ```{r}
-train<-train[train$Fare<500,]
+train<-training[training$Fare<500,]
 
 ```
 
@@ -162,14 +175,14 @@ We discard artifial features and normalize the numerical features
 
 ```{r}
 normalizationData <- list(
-  ageMean=mean(train$Age),
-  ageSD=sd(train$Age),
-  SibSpMean=mean(train$SibSp),
-  SibSpSD=sd(train$SibSp),
-  ParchMean=mean(train$Parch),
-  ParchSD=sd(train$Parch),
-  FareMean=mean(train$Fare),
-  FareSD=sd(train$Fare)
+  ageMean=mean(training$Age),
+  ageSD=sd(training$Age),
+  SibSpMean=mean(training$SibSp),
+  SibSpSD=sd(training$SibSp),
+  ParchMean=mean(training$Parch),
+  ParchSD=sd(training$Parch),
+  FareMean=mean(training$Fare),
+  FareSD=sd(training$Fare)
 )
 
 normalizationData
@@ -178,14 +191,14 @@ normalizationData
 
 ```{r}
 training<-data.frame(
-Pclass=train$Pclass,
-Sex =train$Sex,
-AgeNorm=(train$Age-normalizationData$ageMean)/normalizationData$ageSD,
-SibSpNorm=(train$SibSp -normalizationData$SibSpMean)/normalizationData$SibSpSD,
-ParchNorm=(train$Parch -normalizationData$ParchMean)/normalizationData$ParchSD,
-FareNorm=(train$Fare -normalizationData$FareMean)/normalizationData$FareSD,
-Embarked=train$Embarked,
-Survived=train$Survived
+Pclass=training$Pclass,
+Sex =training$Sex,
+AgeNorm=(training$Age-normalizationData$ageMean)/normalizationData$ageSD,
+SibSpNorm=(training$SibSp -normalizationData$SibSpMean)/normalizationData$SibSpSD,
+ParchNorm=(training$Parch -normalizationData$ParchMean)/normalizationData$ParchSD,
+FareNorm=(training$Fare -normalizationData$FareMean)/normalizationData$FareSD,
+Embarked=training$Embarked,
+Survived=training$Survived
   )
 ```
 
@@ -200,7 +213,9 @@ summary(training)
 save the clean data
 
 ```{r}
-save(file = "../data/cleantraining.dat", training)
+save(file = "../processed/training.dat", training)
+save(file = "../processed/testing.dat", testing)
+save(file = "../processed/validation.dat", validation)
 ```
 
 
